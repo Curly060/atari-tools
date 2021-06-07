@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 import os
 import sys
 import subprocess
@@ -21,11 +21,11 @@ partedEnv = os.environ.copy()
 partedEnv['LC_ALL'] = 'C'
 class Device:
     def __init__(self, device, ignoreErrors = False):
-        # WTF: parted's machine parseable output doesn't show the partitino types, so we need to parse text :(
+        # WTF: parted's machine parseable output doesn't show the partition types, so we need to parse text :(
         result = subprocess.run(['parted', '-s', device, 'unit', 'b', 'print'], env = partedEnv, capture_output = True, text = True)
         resultStderr = result.stderr.splitlines()
+        self.isByteSwapped = len(resultStderr) > 0
         if len(resultStderr):
-            self.isByteSwapped = True
             if not ignoreErrors:
                 for err in resultStderr:
                     print(err, file = sys.stderr)
@@ -189,15 +189,17 @@ def flushXmountCache(device, cacheFile):
         for x in [x for x in map(lambda x: CacheFileBlockIndex(*(x[0], *x[1])), enumerate(struct.iter_unpack(CacheFileBlockIndex.STRUCT, blockIndex))) if x.Assigned == 1]:
             subprocess.run(['dd', 'if=' + cacheFile, 'of=' + device, 'bs=' + str(cfh.BlockSize), 'count=1', 'skip=' + str(x.off_data), 'seek=' + str(x.index), 'iflag=skip_bytes', 'conv=swab,notrunc'], capture_output = True, check = True, text = True)
 
-def setupDOSDevice(device, infoFile, xmountBase, xmountDataDir, sparseFile, dmDevice):
+def getByteswappedImage(device, xmountBase, xmountDataDir):
+    if not Device(device, ignoreErrors = True).isByteSwapped:
+        return device
     Path(xmountDataDir).mkdir(parents = True, exist_ok = True)
-    xmountCommand = ['xmount', '--in', 'raw', device, '--out', 'raw',  '--cache', os.path.join(xmountBase, 'cache')]
-    if Device(device, ignoreErrors = True).isByteSwapped:
-        xmountCommand += ['--morph', 'swab']
-    xmountCommand.append(xmountDataDir)
+    xmountCommand = ['xmount', '--in', 'raw', device, '--out', 'raw',  '--cache', os.path.join(xmountBase, 'cache'), '--morph', 'swab', xmountDataDir]
     subprocess.run(xmountCommand, check = True, text = True)
-    xmountImage = os.path.join(xmountDataDir, os.path.splitext(os.path.basename(device))[0]+'.dd')
-    info = setupDevice(Device(xmountImage), sparseFile, dmDevice)
+    return os.path.join(xmountDataDir, os.path.splitext(os.path.basename(device))[0]+'.dd')
+
+def setupDOSDevice(device, infoFile, xmountBase, xmountDataDir, sparseFile, dmDevice):
+    byteswappedImage = getByteswappedImage(device, xmountBase, xmountDataDir)
+    info = setupDevice(Device(byteswappedImage), sparseFile, dmDevice)
     print(info)
     with open(infoFile, 'w') as f:
         json.dump(info, f)
@@ -209,9 +211,10 @@ def removeDOSDevice(device, infoFile, xmountBase, xmountDataDir, sparseFile, dmD
     removeDMDevice(dmDevice)
     for loopDevice in [v for k,v in info.items() if k != 'finalDevice']:
         detachLoopDevice(loopDevice)
-    subprocess.run(['umount', xmountDataDir], check = True, text = True)
-    flushXmountCache(device, os.path.join(xmountBase, 'cache'))
-    shutil.rmtree(xmountBase)
+    if Device(device, ignoreErrors = True).isByteSwapped:
+        subprocess.run(['umount', xmountDataDir], check = True, text = True)
+        flushXmountCache(device, os.path.join(xmountBase, 'cache'))
+        shutil.rmtree(xmountBase)
     os.unlink(sparseFile)
     os.unlink(infoFile)
 
