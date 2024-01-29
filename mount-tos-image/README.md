@@ -52,10 +52,10 @@ Of course this manipulation is not done directly on the SD-/CF-Card. Instead, th
 
 ## How to start the script
 
-* Connect the TOS medium of your choice as block device to the linux system or simply use an image file  
-* Start the script from within a working directory on a file system that is capable of creating spares files (e.g. btrfs, ext4, ...)
-* When started in "mount" mode, the script will create temporaray sparse files within the current directory 
-* When started in "umount" mode, the script will also delete these temporaray sparse files
+  * Connect the TOS medium of your choice as block device to the linux system or simply use an image file  
+  * Start the script from within a working directory on a file system that is capable of creating sparse files (e.g. btrfs, ext4, ...)
+  * When started in "mount" mode, the script will create temporary sparse files within the current directory 
+  * When started in "umount" mode, the script will also delete these temporaray sparse files
 
 ## What the script does
 
