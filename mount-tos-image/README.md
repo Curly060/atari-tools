@@ -20,7 +20,10 @@ No! Of course not! Seek no more, this script does a whole lot of crazy magic to 
 ## Prerequisites
 
   * Python >= 3.6
+  * parted
+  * fallocate (util-linux)
   * [A patched version of xmount](https://github.com/Curly060/xmount)
+  * Your TOS media you want to access with linux as partitioned device (as block device or image file)
 
 ## Installation
 
@@ -47,6 +50,12 @@ But since all calculations in the FAT are done using clusters all we need to do 
 
 Of course this manipulation is not done directly on the SD-/CF-Card. Instead, the script makes heavy use of some nice and cool Linux features (FUSE and device mapper).
 
+## How to start the script
+
+* Connect the TOS medium of your choice as block device to the linux system or simply use an image file  
+* Start the script from within a working directory on a file system that is capable of creating spares files (e.g. btrfs, ext4, ...)
+* When started in "mount" mode, the script will create temporaray sparse files within the current directory 
+* When started in "umount" mode, the script will also delete these temporaray sparse files
 
 ## What the script does
 
@@ -76,7 +85,7 @@ TOS Image Mount Helper
 
 positional arguments:
   {mount,umount}  action to perform
-  device          path to SD-/CF-Card device
+  device          path to SD-/CF-Card device (block device or image file)
   deviceName      name of dmsetup device
 
 optional arguments:
@@ -121,3 +130,5 @@ Unmount all partitions that you mounted. Only then call the script again to actu
 ```bash
 sudo mount-tos-image umount /dev/sdX milan
 ```
+
+Note: In the current version, you cannot umount without write back
