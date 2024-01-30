@@ -24,6 +24,7 @@ No! Of course not! Seek no more, this script does a whole lot of crazy magic to 
   * fallocate (util-linux)
   * [A patched version of xmount](https://github.com/Curly060/xmount)
   * Your TOS media you want to access with linux as partitioned device (as block device or image file)
+  * Free space on a sparse file capabale file system (e.g. ext4, btrfs, ...) of the size of your TOS media. (Note: The space will not be written, but only temporarily and logically allocated)
 
 ## Installation
 
@@ -53,7 +54,7 @@ Of course this manipulation is not done directly on the SD-/CF-Card. Instead, th
 ## How to start the script
 
   * Connect the TOS medium of your choice as block device to the linux system or simply use an image file  
-  * Start the script from within a working directory on a file system that is capable of creating sparse files (e.g. btrfs, ext4, ...)
+  * Start the script from within a working directory on a file system that is capable of creating sparse files (e.g. btrfs, ext4, ...) and which has free space at least of the size of your TOS media (Note: The space will not be written, but only temporarily and logically allocated)
   * When started in "mount" mode, the script will create temporary sparse files within the current directory 
   * When started in "umount" mode, the script will also delete these temporaray sparse files
 
